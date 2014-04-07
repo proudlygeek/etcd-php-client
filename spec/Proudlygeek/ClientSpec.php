@@ -77,4 +77,46 @@ class ClientSpec extends ObjectBehavior
     	$this->shouldThrow('Proudlygeek\Exception\KeyNotFoundException')->during('get', array('/nonExistingKey'));
 
     }
+
+    function it_should_put_a_key(HttpClient $client) 
+    {
+        $server = 'http://etcd.example.lo';
+        $port = 9999;
+        $options = array('SSL' => true);
+        $this->beConstructedWith($server, $port, $options, $client);
+
+        $json = json_encode(array(
+            "action" => "set",
+            "node" => array(
+                "key" => "/new",
+                "value" => "this is a sample value",
+                "modifiedIndex" => 5,
+                "createdIndex" => 5
+            )  
+        ));
+
+        $response = new \Requests_Response();
+        $response->status_code = 201;
+        $response->body = $json;
+
+        $client->put('http://etcd.example.lo:9999/v2/keys/new', "this is a sample value")->willReturn($response);
+
+        $this->set('/new', "this is a sample value")->shouldEqual(json_decode($json, true));
+    }
+
+    function it_should_throw_an_exception_if_status_code_is_not_201(HttpClient $client)
+    {
+        $server = 'http://etcd.example.lo';
+        $port = 9999;
+        $options = array('SSL' => true);
+        $this->beConstructedWith($server, $port, $options, $client);
+
+        $response = new \Requests_Response();
+        $response->status = 500;
+        $response->body = "Internal Server Error";
+
+        $client->put('http://etcd.example.lo:9999/v2/keys/new', 'this is a sample value')->willThrow('Requests_Exception_HTTP_500');
+
+        $this->shouldThrow('Proudlygeek\Exception\KeyNotCreatedException')->during('set', array('/new', 'this is a sample value'));
+    }
 }

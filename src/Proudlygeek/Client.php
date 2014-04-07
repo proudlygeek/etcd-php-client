@@ -3,6 +3,7 @@
 namespace Proudlygeek;
 
 use Requests;
+use Proudlygeek\Exception\KeyNotCreatedException;
 use Proudlygeek\Exception\KeyNotFoundException;
 
 
@@ -58,13 +59,46 @@ class Client
 		return $this->host;
 	}
 
+	/**
+	 * Retrieves an ETCD key given a relative path.
+	 *
+	 * For example:
+	 *
+	 * $client->get('/services/hello');
+	 *
+	 * @throws KeyNotFoundException Key not found
+	 * @param  string $key  		Relative key path
+	 * @return string         
+	 */
     public function get($key)
     {
     	try {
 	    	$response = $this->client->get($this->host . $key);
 	    	return json_decode($response->body, true);
     	} catch (\Requests_Exception_HTTP_404 $e) {
-    		throw new KeyNotFoundException($e);
+    		throw new KeyNotFoundException($e->getMessage());
     	}
+    }
+
+	/**
+	 * Sets a key given a path and a value.
+	 *
+	 * For example:
+	 *
+	 * $client->set('/services/cat', 'meow');
+	 *
+	 * @throws KeyNotCreatedException Incorrect key creation (res code not 201)
+	 * @param string $key   Relative key path
+	 * @param array $value  The value to be setted on this key
+	 */
+    public function set($key, $value)
+    {
+    	try {
+    		$response = $this->client->put($this->host . $key, $value);
+    	} catch (\Requests_Exception $e) {
+    		throw new KeyNotCreatedException("The key was not setted: " . $e->getReason());
+    	}
+
+    	return json_decode($response->body, true);
     }
 }
