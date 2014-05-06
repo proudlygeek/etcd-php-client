@@ -16,7 +16,10 @@ class HttpClient {
 	 */
 	public function get($url) 
 	{
-		return Requests::get($url, array('Accept' => 'application/json'));
+        $request = Requests::get($url, array('Accept' => 'application/json'));
+        $request->throw_for_status();
+
+        return $request;
 	}
 
 	/**
@@ -31,6 +34,9 @@ class HttpClient {
 	 */
 	public function put($url, $value)
 	{
-		return Requests::put($url, array('Accept' => 'application/json'), array('value' => $value));
+		$request = Requests::put($url, array('Accept' => 'application/json'), array('value' => $value));
+        $request->throw_for_status();
+
+        return $request;
 	}
 }
